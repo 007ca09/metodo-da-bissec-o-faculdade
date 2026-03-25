@@ -13,20 +13,29 @@ transforms_syms = standard_transformations + ( implicit_multiplication_applicati
 x_val_sym = symbols('x')
 
 f_expr = input('f(x) = ')
-interval = literal_eval(input('interval in format [a,b]: ').strip().split()[0])
-epsilon = float(simplify(input("E: ").replace('^', '*')))
+interval = literal_eval(input('interval in format [a,b]: ').strip())
+a,b = interval
+epsilon = float(simplify(input("E: ").replace('^', '**')))
 
 parse_f_expr = parse_expr(f_expr, transformations=transforms_syms)
-f = lambdify(x_val_sym, parse_f_expr)
+f = lambdify(x_val_sym, parse_f_expr, "math")
 
-midpoint = (interval[0] + interval[1]) / 2
+n_iter = 0
 
-while abs(f(midpoint)) > 0.01:
-    midpoint = (interval[0] + interval[1]) / 2
+if f(a) * f(b) > 0:
+    print(f'não existe raiz garantida no intervalo: {interval}')
 
-    if f(interval[0]) * f(midpoint) < 0:
-        interval[1] = midpoint
-    elif f(interval[0]) * f(midpoint) > 0:
-        interval[0] = midpoint
+else:
+    while abs(b - a) > epsilon and n_iter < 100:
+        midpoint = (a + b) / 2
+        print(f"{n_iter:3d} | a = {a: .6f} | b = {b: .6f} | m = {midpoint: .6f} | "
+      f"f(a) = {f(a): .6e} | f(b) = {f(b): .6e} | f(m) = {f(midpoint): .6e}")
+        if abs(f(midpoint)) < epsilon:
+            break
+        if f(a) * f(midpoint) < 0:
+            b = midpoint
+        else:
+            a = midpoint
+        n_iter += 1
 
-print(midpoint)
+print(f'\nA raiz aproximada de f(x) = {f_expr} é {midpoint}')
