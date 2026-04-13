@@ -5,37 +5,56 @@ from sympy.parsing.sympy_parser import (
     convert_xor,
 )
 from sympy import symbols, lambdify, simplify
-from ast import literal_eval
+from math import log2, ceil
 
+#configurando transformações do símbolo de potência '^' e fator implícito ex: '3x'
+transforms_syms = standard_transformations + (
+    implicit_multiplication_application, convert_xor
+)
 
-transforms_syms = standard_transformations + ( implicit_multiplication_application, convert_xor)
+x = symbols('x')
 
-x_val_sym = symbols('x')
+#cabeçalho
+print( '=' * 30 + '\n   METODO DA BISSECÇÃO v2.0\n' + '=' * 30 + '\n')
 
+#entradas do usuario
 f_expr = input('f(x) = ')
-interval = literal_eval(input('interval in format [a,b]: ').strip())
-a,b = interval
+a, b = map(float, input('interval in format [a,b]: ').strip('[]').split(','))
 epsilon = float(simplify(input("E: ").replace('^', '**')))
 
-parse_f_expr = parse_expr(f_expr, transformations=transforms_syms)
-f = lambdify(x_val_sym, parse_f_expr, "math")
+expr = parse_expr(f_expr, transformations=transforms_syms)
+f = lambdify(x, expr, "math")
 
-n_iter = 0
+#definindo previamente f(a) e f(b) para evitar cálculos desnecessários durante o loop
+fa = f(a)
+fb = f(b)
 
-if f(a) * f(b) > 0:
-    print(f'não existe raiz garantida no intervalo: {interval}')
+
+if fa * fb > 0:
+    print(f'\nNão existe raiz garantida no intervalo [{a}, {b}]')
 
 else:
-    while abs(b - a) > epsilon and n_iter < 100:
+    #maximo de iterações teoricamente calculados
+    n_max = ceil(log2((b - a) / epsilon))
+    print('')
+    for n_iter in range(n_max):
         midpoint = (a + b) / 2
+        fm = f(midpoint)
+
         print(f"{n_iter:3d} | a = {a: .6f} | b = {b: .6f} | m = {midpoint: .6f} | "
-      f"f(a) = {f(a): .6e} | f(b) = {f(b): .6e} | f(m) = {f(midpoint): .6e}")
-        if abs(f(midpoint)) < epsilon:
+              f"f(a) = {fa: .6e} | f(b) = {fb: .6e} | f(m) = {fm: .6e}")
+
+        if fm == 0:
             break
-        if f(a) * f(midpoint) < 0:
+
+        if (b - a) / 2 < epsilon:
+            break
+
+        if fa * fm < 0:
             b = midpoint
+            fb = fm
         else:
             a = midpoint
-        n_iter += 1
+            fa = fm
 
-print(f'\nA raiz aproximada de f(x) = {f_expr} é {midpoint}')
+    print(f'\nRaiz aproximada: {midpoint}')
